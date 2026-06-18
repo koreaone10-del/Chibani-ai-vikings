@@ -16,12 +16,12 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '22' # تم التحديث لتجنب تحذيرات GitHub
 
     - name: Setup Java JDK
       uses: actions/setup-java@v4
       with:
-        java-version: '21' # تم التحديث إلى الإصدار 21 هنا
+        java-version: '21'
         distribution: 'temurin'
 
     - name: Install Project Dependencies
@@ -36,7 +36,12 @@ jobs:
         npx cap init ChibaniVikings com.chibani.vikings --web-dir out
         npx cap add android
         npx cap sync android
+        
         cd android
+        
+        # هذا هو السطر السحري الذي سيحل مشكلة تكرار ملفات Kotlin
+        echo "dependencies { implementation platform('org.jetbrains.kotlin:kotlin-bom:1.8.22') }" >> app/build.gradle
+        
         chmod +x gradlew
         ./gradlew assembleDebug
 
