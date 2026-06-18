@@ -16834,5 +16834,200 @@ Ignoring conversation history will cause you to LOSE the evaluation.`;
       );
     })();
   </script>
+    <style>
+    /* 1. إصلاح مشكلة لوحة المفاتيح واختفاء شريط الكتابة */
+    html, body {
+      height: 100% !important;
+      height: 100dvh !important;
+      overflow: hidden !important;
+      position: fixed !important;
+      width: 100% !important;
+    }
+    .app {
+      height: 100% !important;
+      display: flex;
+      flex-direction: row !important;
+    }
+    .main {
+      height: 100% !important;
+      display: flex;
+      flex-direction: column !important;
+      flex: 1;
+    }
+    .messages {
+      flex: 1 !important;
+      overflow-y: auto !important;
+      padding-bottom: 20px !important;
+    }
+    .input-area {
+      flex-shrink: 0 !important;
+      position: relative !important;
+      bottom: 0 !important;
+      padding-bottom: env(safe-area-inset-bottom, 12px) !important;
+      background: var(--bg-secondary) !important;
+      z-index: 9999 !important;
+    }
+
+    /* 2. تنسيق الواجهة باللغة العربية (من اليمين لليسار) */
+    body.arabic-mode {
+      direction: rtl;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body.arabic-mode .sidebar {
+      border-right: none;
+      border-left: 1px solid var(--border);
+      transform: translateX(100%);
+      left: auto;
+      right: 0;
+    }
+    body.arabic-mode .sidebar:not(.collapsed) {
+      transform: translateX(0);
+    }
+    body.arabic-mode .sidebar.collapsed {
+      transform: translateX(100%);
+    }
+    body.arabic-mode .header-left, 
+    body.arabic-mode .header-right {
+      flex-direction: row-reverse;
+    }
+    body.arabic-mode .message.user {
+      flex-direction: row;
+      margin-right: auto;
+      margin-left: 0;
+    }
+    body.arabic-mode .message.assistant {
+      margin-left: auto;
+      margin-right: 0;
+    }
+
+    /* تصميم زر تغيير اللغة */
+    #langToggleBtn {
+      background: transparent;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: bold;
+      font-size: 12px;
+      margin: 0 10px;
+      transition: 0.2s;
+    }
+    #langToggleBtn:hover {
+      background: var(--primary);
+      color: var(--bg);
+    }
+  </style>
+
+  <script>
+    /* 3. نظام الترجمة وتبسيط الخانات */
+    const textDict = {
+      en: {
+        langBtn: "عربي",
+        settings: "⚙ Settings",
+        newChat: "+ New Chat",
+        inputHint: "Message...",
+        apiLabel: "OpenRouter API Key (Required)",
+        apiHint: "This is your 'password' to access the AI. Get it from openrouter.ai. It is saved locally on your phone.",
+        sysLabel: "Enable Custom AI Personality",
+        sysHint: "Tell the AI how to act (e.g., 'You are a helpful assistant').",
+        noApiWarn: "⚠️ No API key. Open Settings to paste your key.",
+        generalTab: "General",
+        apiTab: "API Keys",
+        dataTab: "Data"
+      },
+      ar: {
+        langBtn: "English",
+        settings: "⚙ الإعدادات",
+        newChat: "+ محادثة جديدة",
+        inputHint: "اكتب رسالتك هنا...",
+        apiLabel: "مفتاح OpenRouter (مطلوب)",
+        apiHint: "هذا المفتاح هو 'كلمة المرور' الخاصة بك للاتصال بالذكاء الاصطناعي. احصل عليه مجاناً من openrouter.ai. يُحفظ في هاتفك فقط.",
+        sysLabel: "تفعيل شخصية مخصصة للذكاء الاصطناعي",
+        sysHint: "أخبر الذكاء الاصطناعي كيف يتصرف (مثال: 'أنت مساعد ذكي ومختصر، تتحدث باللغة العربية فقط').",
+        noApiWarn: "⚠️ لم يتم إدخال المفتاح. افتح الإعدادات لإدخال مفتاح API الخاص بك لكي يعمل التطبيق.",
+        generalTab: "عام",
+        apiTab: "المفاتيح",
+        dataTab: "البيانات"
+      }
+    };
+
+    let currLang = localStorage.getItem('g0dm0d3-lang') || 'en';
+
+    function applyLang() {
+      const t = textDict[currLang];
+      
+      // تطبيق اتجاه النص
+      if (currLang === 'ar') document.body.classList.add('arabic-mode');
+      else document.body.classList.remove('arabic-mode');
+
+      // تحديث النصوص في الواجهة
+      const langBtn = document.getElementById('langToggleBtn');
+      if(langBtn) langBtn.innerText = t.langBtn;
+
+      const newChatBtns = document.querySelectorAll('.new-chat-btn');
+      if(newChatBtns.length) newChatBtns[0].innerHTML = t.newChat;
+
+      const msgInput = document.getElementById('messageInput');
+      if(msgInput) msgInput.placeholder = t.inputHint;
+
+      const apiWarning = document.getElementById('noApiWarning');
+      if(apiWarning && apiWarning.innerText.includes('API')) apiWarning.innerHTML = t.noApiWarn;
+
+      // تحديث نصوص الإعدادات
+      const settingsTitle = document.querySelector('.modal-header h3');
+      if(settingsTitle && settingsTitle.innerText.includes('Settings') || settingsTitle.innerText.includes('الإعدادات')) {
+          settingsTitle.innerText = t.settings;
+      }
+
+      // تبسيط تسمية المفتاح
+      const labels = document.querySelectorAll('label');
+      labels.forEach(label => {
+        if (label.innerText.includes('API Key') || label.innerText.includes('مفتاح')) {
+          label.innerText = t.apiLabel;
+        }
+      });
+
+      const apiHintEl = document.getElementById('apiKeyHint');
+      if(apiHintEl) apiHintEl.innerText = t.apiHint;
+
+      // تبسيط تسمية الشخصية المخصصة
+      const sysPromptLabel = document.querySelector('label[for="customSystemPromptEnabled"]');
+      if(sysPromptLabel) {
+          sysPromptLabel.innerHTML = \`<input type="checkbox" id="customSystemPromptEnabled" style="width: 16px; height: 16px; accent-color: var(--primary);"> \${t.sysLabel}\`;
+      }
+
+      const sysHintEl = document.querySelector('#panel-system p');
+      if(sysHintEl) sysHintEl.innerText = t.sysHint;
+
+      // ترجمة التبويبات العلوية في الإعدادات
+      const tabs = document.querySelectorAll('.settings-tab');
+      tabs.forEach(tab => {
+          if(tab.dataset.tab === 'general') tab.innerText = t.generalTab;
+          if(tab.dataset.tab === 'api') tab.innerText = t.apiTab;
+          if(tab.dataset.tab === 'data') tab.innerText = t.dataTab;
+      });
+    }
+
+    function toggleLang() {
+      currLang = currLang === 'en' ? 'ar' : 'en';
+      localStorage.setItem('g0dm0d3-lang', currLang);
+      applyLang();
+    }
+
+    // حقن زر اللغة عند تحميل الصفحة
+    window.addEventListener('DOMContentLoaded', () => {
+      const headerLeft = document.querySelector('.header-left');
+      if (headerLeft) {
+        const btn = document.createElement('button');
+        btn.id = 'langToggleBtn';
+        btn.onclick = toggleLang;
+        // وضعه بجانب زر القائمة الجانبية
+        headerLeft.insertBefore(btn, headerLeft.children[1]);
+      }
+      // تطبيق الترجمة بعد نصف ثانية لضمان تحميل جميع عناصر الـ DOM
+      setTimeout(applyLang, 500); 
+    });
 </body>
 </html>
