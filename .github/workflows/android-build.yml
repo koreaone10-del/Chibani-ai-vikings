@@ -2,8 +2,8 @@ name: Build Standalone APK
 
 on:
   push:
-    branches: [ "main" ] # سيبدأ البناء تلقائياً عند أي تعديل على هذا الفرع
-  workflow_dispatch: # يتيح لك تشغيل البناء يدوياً في أي وقت
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -32,17 +32,10 @@ jobs:
 
     - name: Setup Capacitor & Build Android
       run: |
-        # تثبيت أدوات تغليف الويب إلى أندرويد
         npm install @capacitor/core @capacitor/cli @capacitor/android
-        
-        # تهيئة التطبيق برمجياً وتوجيهه للمجلد out الناتج عن Next.js
-        npx cap init ChibaniVikings com.chibani.vikings --web-dir out --force
-        
-        # إضافة منصة الأندرويد ومزامنة الملفات
+        npx cap init ChibaniVikings com.chibani.vikings --web-dir out
         npx cap add android
         npx cap sync android
-        
-        # الدخول لمجلد الأندرويد وبناء ملف الـ APK
         cd android
         chmod +x gradlew
         ./gradlew assembleDebug
