@@ -1,0 +1,54 @@
+name: Build Standalone APK
+
+on:
+  push:
+    branches: [ "main" ] # سيبدأ البناء تلقائياً عند أي تعديل على هذا الفرع
+  workflow_dispatch: # يتيح لك تشغيل البناء يدوياً في أي وقت
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Setup Java JDK
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Install Project Dependencies
+      run: npm install --legacy-peer-deps
+
+    - name: Build Next.js App
+      run: npm run build
+
+    - name: Setup Capacitor & Build Android
+      run: |
+        # تثبيت أدوات تغليف الويب إلى أندرويد
+        npm install @capacitor/core @capacitor/cli @capacitor/android
+        
+        # تهيئة التطبيق برمجياً وتوجيهه للمجلد out الناتج عن Next.js
+        npx cap init ChibaniVikings com.chibani.vikings --web-dir out --force
+        
+        # إضافة منصة الأندرويد ومزامنة الملفات
+        npx cap add android
+        npx cap sync android
+        
+        # الدخول لمجلد الأندرويد وبناء ملف الـ APK
+        cd android
+        chmod +x gradlew
+        ./gradlew assembleDebug
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: Chibani-Vikings-App
+        path: android/app/build/outputs/apk/debug/app-debug.apk
